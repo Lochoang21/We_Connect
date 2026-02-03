@@ -9,7 +9,6 @@ import type { PostListItem } from "@/types/post";
  */
 export const mockPostsWithLikeStatus = (
   posts: PostListItem[],
-  currentUserId: string | undefined
 ): PostListItem[] => {
   // Mock: Simulate random likes for testing
   return posts.map((post) => ({
