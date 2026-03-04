@@ -2,21 +2,26 @@ import axios from "axios";
 import type { AppDispatch } from "../redux/store";
 import { logout } from "../redux/slices/authSlice";
 import { tokenStorage } from "../utils/tokenStorage";
+import type {
+  LoginRequest,
+  RegisterRequest,
+  CheckCodeRequest,
+  EmailRequest,
+  ChangePasswordRequest,
+  RefreshTokenRequest,
+  UpdateProfileRequest,
+} from "../types/auth";
+import type {
+  CreatePostRequest,
+  GetPostsParams,
+  CommentOnPostRequest,
+} from "../types/post";
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-// Public axios instance (không cần authentication)
-export const publicAPI = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// Private axios instance (cần authentication)
-export const privateAPI = axios.create({
-  baseURL: API_BASE_URL,
+// Main axios instance
+const fetch = axios.create({
+  baseURL: BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -43,7 +48,7 @@ const handleTokenExpiration = () => {
 };
 
 // Request interceptor - Tự động thêm token vào header
-privateAPI.interceptors.request.use(
+fetch.interceptors.request.use(
   (config) => {
     const token = tokenStorage.getAccessToken();
     if (token) {
@@ -57,7 +62,7 @@ privateAPI.interceptors.request.use(
 );
 
 // Response interceptor - Xử lý refresh token khi 401
-privateAPI.interceptors.response.use(
+fetch.interceptors.response.use(
   (response) => {
     return response;
   },
@@ -74,7 +79,7 @@ privateAPI.interceptors.response.use(
         if (refreshToken) {
           // Gọi API refresh token với body đúng format backend
           const response = await axios.post(
-            `${API_BASE_URL}/api/v1/auth/refresh-token`,
+            `${BASE_URL}/api/v1/auth/refresh-token`,
             { refreshToken },
             {
               headers: {
@@ -85,12 +90,12 @@ privateAPI.interceptors.response.use(
 
           const { access_token, refresh_token } = response.data.data;
 
-          // Lưu token mới với prefix
+          // Lưu token mới
           tokenStorage.setTokens(access_token, refresh_token);
 
           // Retry request gốc với token mới
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
-          return privateAPI(originalRequest);
+          return fetch(originalRequest);
         }
       } catch (refreshError) {
         console.error("Refresh token failed:", refreshError);
@@ -110,13 +115,115 @@ privateAPI.interceptors.response.use(
 
 // API endpoints
 export const API = {
-  // Thêm các API khác ở đây
-  // user: {
-  //   getProfile: () => privateAPI.get("/api/v1/user/profile"),
-  //   updateProfile: (data: User) =>
-  //     privateAPI.put("/api/v1/user/profile", data),
-  // },
+  auth: {
+    // Authentication
+    login: (data: LoginRequest) => fetch.post("/api/v1/auth/login", data),
+    getProfile: () => fetch.get("/api/v1/auth/profile"),
+
+    // Registration & Activation
+    register: (data: RegisterRequest) =>
+      fetch.post("/api/v1/auth/register", data),
+    checkCode: (data: CheckCodeRequest) =>
+      fetch.post("/api/v1/auth/check-code", data),
+    retryActive: (data: EmailRequest) =>
+      fetch.post("/api/v1/auth/retry-active", data),
+
+    // Password Management
+    retryPassword: (data: EmailRequest) =>
+      fetch.post("/api/v1/auth/retry-password", data),
+    changePassword: (data: ChangePasswordRequest) =>
+      fetch.post("/api/v1/auth/change-password", data),
+
+    // Token Management
+    refreshToken: (data: RefreshTokenRequest) =>
+      fetch.post("/api/v1/auth/refresh-token", data),
+  },
+
+  user: {
+    // File Upload
+    uploadFile: (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return fetch.post("/api/v1/user/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+    },
+    uploadFileToServer: (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return fetch.post("/api/v1/user/uploads", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+    },
+
+    // User Profile & Management
+    getUserProfile: () => fetch.get("/api/v1/user/user-profile"),
+    updateProfile: (data: UpdateProfileRequest) => fetch.put("/api/v1/user/profile", data),
+
+    // Password Change
+    sendOTPChangePassword: (data: EmailRequest) =>
+      fetch.post("/api/v1/user/send-otp-change-password", data),
+    changePasswordUser: (data: ChangePasswordRequest) =>
+      fetch.post("/api/v1/user/change-password", data),
+
+    // Sub Email Management
+    sendSubEmailOtp: (data: EmailRequest) =>
+      fetch.post("/api/v1/user/send-otp-add-subemail", data),
+    addSubEmail: (data: EmailRequest) =>
+      fetch.post("/api/v1/user/add-subemail", data),
+    removeSubEmail: (data: { email: string }) =>
+      fetch.post("/api/v1/user/remove-subemail", data),
+  },
+
+  posts: {
+    // Create new post
+    createPost: (data: CreatePostRequest) => fetch.post("api/v1/posts", data),
+
+    // Get posts list with pagination
+    getPosts: (params?: GetPostsParams) => {
+      const queryParams = new URLSearchParams();
+      if (params?.page)
+        queryParams.append("page", params.page.toString());
+      if (params?.pageSize)
+        queryParams.append("pageSize", params.pageSize.toString());
+      if (params?.query) queryParams.append("query", params.query);
+
+      const queryString = queryParams.toString();
+      return fetch.get(`api/v1/posts${queryString ? `?${queryString}` : ""}`);
+    },
+
+    // Like a post
+    likePost: (postId: string) => fetch.post(`api/v1/posts/${postId}/like`),
+
+    // Unlike a post
+    unlikePost: (postId: string) =>
+      fetch.delete(`api/v1/posts/${postId}/like`),
+
+    // Comment on a post
+    commentOnPost: (postId: string, data: CommentOnPostRequest) =>
+      fetch.post(`api/v1/posts/${postId}/comment`, data),
+  },
+
+  admin: {
+    // Add admin endpoints here
+  },
+
+  public: {
+    // Add public endpoints here
+  },
+
+  other: {
+    // Add other endpoints here
+  },
 };
 
-// Default export for convenience (use publicAPI for auth endpoints)
-export default publicAPI;
+// Export for backward compatibility
+export const publicAPI = fetch;
+export const privateAPI = fetch;
+export const API_BASE_URL = BASE_URL;
+
+export default fetch;

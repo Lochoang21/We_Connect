@@ -1,5 +1,5 @@
 import axios from "axios";
-import { privateAPI } from "./apiService";
+import { API } from "./apiService";
 import type {
   CreatePostRequest,
   CreatePostResponse,
@@ -18,42 +18,37 @@ const CLOUDINARY_UPLOAD_PRESET =
   import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "we_connect";
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
-// Post API endpoints
+// Post API endpoints - sử dụng API từ apiService
 export const postAPI = {
   // Create new post
   createPost: (data: CreatePostRequest) =>
-    privateAPI.post<ApiResponse<CreatePostResponse>>("api/v1/posts", data),
+    API.posts.createPost(data) as Promise<{
+      data: ApiResponse<CreatePostResponse>;
+    }>,
 
   // Get posts list with pagination
-  getPosts: (params?: GetPostsParams) => {
-    const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.pageSize) queryParams.append("pageSize", params.pageSize.toString());
-    if (params?.query) queryParams.append("query", params.query);
-
-    const queryString = queryParams.toString();
-    return privateAPI.get<ApiResponse<GetPostsResponse>>(
-      `api/v1/posts${queryString ? `?${queryString}` : ""}`
-    );
-  },
+  getPosts: (params?: GetPostsParams) =>
+    API.posts.getPosts(params) as Promise<{
+      data: ApiResponse<GetPostsResponse>;
+    }>,
 
   // Like a post
   likePost: (postId: string) =>
-    privateAPI.post<ApiResponse<{ message: string }>>(
-      `api/v1/posts/${postId}/like`
-    ),
+    API.posts.likePost(postId) as Promise<{
+      data: ApiResponse<{ message: string }>;
+    }>,
+
   // Unlike a post
   unlikePost: (postId: string) =>
-    privateAPI.delete<ApiResponse<{ message: string }>>(
-      `api/v1/posts/${postId}/like`
-    ),
+    API.posts.unlikePost(postId) as Promise<{
+      data: ApiResponse<{ message: string }>;
+    }>,
 
   // Comment on a post
   commentOnPost: (postId: string, data: CommentOnPostRequest) =>
-    privateAPI.post<ApiResponse<CommentOnPostResponse>>(
-      `api/v1/posts/${postId}/comment`,
-      data
-    ),
+    API.posts.commentOnPost(postId, data) as Promise<{
+      data: ApiResponse<CommentOnPostResponse>;
+    }>,
 };
 
 // Helper function for type-safe error handling

@@ -9,38 +9,48 @@ import type {
   EmailRequest,
   ChangePasswordRequest,
   RefreshTokenRequest,
-  User
+  User,
 } from "../types/auth";
-import { privateAPI, publicAPI } from "./apiService";
+import { API } from "./apiService";
 import { tokenStorage } from "../utils/tokenStorage";
 
-// Auth API endpoints
+// Auth API endpoints - sử dụng API từ apiService
 export const authAPI = {
   // Authentication
   login: (data: LoginRequest) =>
-    publicAPI.post<ApiResponse<LoginResponse>>("/api/v1/auth/login", data),
+    API.auth.login(data) as Promise<{ data: ApiResponse<LoginResponse> }>,
 
   getProfile: () =>
-    privateAPI.get<ApiResponse<User>>("/api/v1/auth/profile"),
+    API.auth.getProfile() as Promise<{ data: ApiResponse<User> }>,
 
   // Registration & Activation
   register: (data: RegisterRequest) =>
-    publicAPI.post<ApiResponse<{ id: string }>>("/api/v1/auth/register", data),
+    API.auth.register(data) as Promise<{ data: ApiResponse<{ id: string }> }>,
   checkCode: (data: CheckCodeRequest) =>
-    publicAPI.post<ApiResponse<{ isBeforeCheck: boolean }>>("/api/v1/auth/check-code", data),
+    API.auth.checkCode(data) as Promise<{
+      data: ApiResponse<{ isBeforeCheck: boolean }>;
+    }>,
 
   retryActive: (data: EmailRequest) =>
-    publicAPI.post<ApiResponse<{ id: string }>>("/api/v1/auth/retry-active", data),
+    API.auth.retryActive(data) as Promise<{
+      data: ApiResponse<{ id: string }>;
+    }>,
 
   // Password Management
   retryPassword: (data: EmailRequest) =>
-    publicAPI.post<ApiResponse<{ id: string; email: string }>>("/api/v1/auth/retry-password", data),
+    API.auth.retryPassword(data) as Promise<{
+      data: ApiResponse<{ id: string; email: string }>;
+    }>,
   changePassword: (data: ChangePasswordRequest) =>
-    publicAPI.post<ApiResponse<{ isBeforeCheck: boolean }>>("/api/v1/auth/change-password", data),
+    API.auth.changePassword(data) as Promise<{
+      data: ApiResponse<{ isBeforeCheck: boolean }>;
+    }>,
 
   // Token Management
   refreshToken: (data: RefreshTokenRequest) =>
-    publicAPI.post<ApiResponse<LoginResponse>>("/api/v1/auth/refresh-token", data),
+    API.auth.refreshToken(data) as Promise<{
+      data: ApiResponse<LoginResponse>;
+    }>,
 };
 
 // Service layer với error handling

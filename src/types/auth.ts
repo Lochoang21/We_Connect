@@ -48,6 +48,13 @@ export interface ChangePasswordRequest {
   confirmPassword: string;
 }
 
+export interface UpdateProfileRequest {
+  name?: string;
+  phone?: string;
+  address?: string;
+  image?: string;
+}
+
 export interface RefreshTokenRequest {
   refreshToken: string;
 }
