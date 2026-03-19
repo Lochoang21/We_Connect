@@ -180,6 +180,10 @@ export const API = {
       fetch.post("/api/v1/user/add-subemail", data),
     removeSubEmail: (data: { email: string }) =>
       fetch.post("/api/v1/user/remove-subemail", data),
+
+    // Search users for friend suggestions / add friend flow
+    searchFriends: (params?: Record<string, unknown>) =>
+      fetch.get("/api/v1/users/search-friends", { params }),
   },
 
   posts: {
@@ -212,6 +216,36 @@ export const API = {
     // Comment on a post
     commentOnPost: (postId: string, data: CommentOnPostRequest) =>
       fetch.post(`api/v1/posts/${postId}/comment`, data),
+  },
+
+  friends: {
+    // Send friend request
+    sendRequest: (targetUserId: number) =>
+      fetch.post("/api/v1/friends/request", { targetUserId }),
+
+    // Accept friend request
+    acceptRequest: (targetUserId: number) =>
+      fetch.patch("/api/v1/friends/request/accept", { targetUserId }),
+
+    // Cancel sent friend request
+    cancelRequest: (targetUserId: number) =>
+      fetch.delete("/api/v1/friends/request", { data: { targetUserId } }),
+
+    // Unfriend
+    unfriend: (targetUserId: number) =>
+      fetch.delete("/api/v1/friends", { data: { targetUserId } }),
+
+    // Get friends list
+    getFriendsList: (params?: Record<string, unknown>) =>
+      fetch.get("/api/v1/friends", { params }),
+
+    // Get pending friend requests
+    getPendingRequests: (params?: Record<string, unknown>) =>
+      fetch.get("/api/v1/friends/pending", { params }),
+
+    // Get another user's friends
+    getUserFriends: (userId: number, params?: Record<string, unknown>) =>
+      fetch.get(`/api/v1/friends/users/${userId}`, { params }),
   },
 
   admin: {

@@ -4,6 +4,7 @@ import RegisterPage from "@/pages/Auth/RegisterPage";
 import LoginPage from "@/pages/Auth/LoginPage";
 import { PublicRoute } from "@/components/PublicRoute";
 import { PrivateRoute } from "@/components/PrivateRoute";
+import { FriendListPage } from "@/components/Friends/FriendListPage";
 
 const HomeLayout = lazy(() => import("@/pages/HomeLayout"));
 const HomePage = lazy(() => import("@/pages/HomePage"));
@@ -24,6 +25,10 @@ const routes = [
       {
         path: "/profile",
         element: <ProfilePage />,
+      },
+      {
+        path: "/friends",
+        element: <FriendListPage />,
       },
     ],
   },
