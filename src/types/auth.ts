@@ -70,6 +70,7 @@ export interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
   errorCode: number | null;

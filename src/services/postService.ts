@@ -4,6 +4,7 @@ import type {
   CreatePostRequest,
   CreatePostResponse,
   GetPostsResponse,
+  GetMyPostsResponse,
   GetPostsParams,
   ApiResponse,
   CloudinaryUploadResponse,
@@ -30,6 +31,12 @@ export const postAPI = {
   getPosts: (params?: GetPostsParams) =>
     API.posts.getPosts(params) as Promise<{
       data: ApiResponse<GetPostsResponse>;
+    }>,
+
+  // Get current user's posts
+  getMyPosts: () =>
+    API.posts.getMyPosts() as Promise<{
+      data: ApiResponse<GetMyPostsResponse>;
     }>,
 
   // Like a post
@@ -180,6 +187,20 @@ export const postService = {
     } catch (error: unknown) {
       console.error("Get posts error:", error);
       throw new Error(getErrorMessage(error, "Failed to get posts"));
+    }
+  },
+
+  /**
+   * Get current user's posts
+   * @returns Posts list with pagination info
+   */
+  getMyPosts: async (): Promise<GetMyPostsResponse> => {
+    try {
+      const response = await postAPI.getMyPosts();
+      return response.data.data;
+    } catch (error: unknown) {
+      console.error("Get my posts error:", error);
+      throw new Error(getErrorMessage(error, "Failed to get my posts"));
     }
   },
 

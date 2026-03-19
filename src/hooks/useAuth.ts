@@ -11,13 +11,9 @@ interface UseAuthReturn {
 
 // Simple auth hook based on Redux auth slice
 export const useAuth = (): UseAuthReturn => {
-  const { user, accessToken, status, isAuthenticated } = useAppSelector(
+  const { user, accessToken, status, isAuthenticated, isInitialized } = useAppSelector(
     (state) => state.auth
   );
-
-  // We read initial auth state from localStorage synchronously in authSlice,
-  // so we can treat it as initialized immediately.
-  const isInitialized = true;
 
   return {
     user,

@@ -1,6 +1,6 @@
 import axios from "axios";
 import type { AppDispatch } from "../redux/store";
-import { logout } from "../redux/slices/authSlice";
+import { logout, setTokens } from "../redux/slices/authSlice";
 import { tokenStorage } from "../utils/tokenStorage";
 import type {
   LoginRequest,
@@ -92,6 +92,9 @@ fetch.interceptors.response.use(
 
           // Lưu token mới
           tokenStorage.setTokens(access_token, refresh_token);
+          if (storeDispatch) {
+            storeDispatch(setTokens({ accessToken: access_token, refreshToken: refresh_token }));
+          }
 
           // Retry request gốc với token mới
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
@@ -195,6 +198,9 @@ export const API = {
       const queryString = queryParams.toString();
       return fetch.get(`api/v1/posts${queryString ? `?${queryString}` : ""}`);
     },
+
+    // Get current user's posts
+    getMyPosts: () => fetch.get("api/v1/posts/me"),
 
     // Like a post
     likePost: (postId: string) => fetch.post(`api/v1/posts/${postId}/like`),

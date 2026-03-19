@@ -5,12 +5,12 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/redux/slices/authSlice";
 import type { LoginResponse } from "@/types/auth";
 import { useSnackbar } from "@/context/AlertProvider";
 import ForgotPasswordModal from "@/components/Auth/ForgotPasswordModal";
 import AccountActivationModal from "@/components/Auth/AccountActivationModal";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 
 // shadcn/ui imports
 import { Button } from "@/components/ui/button";
@@ -29,16 +29,6 @@ interface LoginFormData {
   rememberMe?: boolean;
 }
 
-interface AuthState {
-  status: "idle" | "loading" | "succeeded" | "failed";
-  error: string | null;
-  errorCode: number | null;
-}
-
-interface RootState {
-  auth: AuthState;
-}
-
 const LoginPage = () => {
   const {
     register,
@@ -47,9 +37,9 @@ const LoginPage = () => {
     formState: { errors },
   } = useForm<LoginFormData>();
 
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { status, error, errorCode } = useSelector((state: RootState) => state.auth);
+  const { status, error, errorCode } = useAppSelector((state) => state.auth);
   const [openForgotPassword, setOpenForgotPassword] = useState(false);
   const [openActivationModal, setOpenActivationModal] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);

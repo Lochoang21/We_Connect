@@ -30,6 +30,10 @@ export const tokenStorage = {
     localStorage.removeItem("refreshToken");
   },
 
+  clearAuth(): void {
+    this.clearTokens();
+  },
+
   // Check if tokens exist
   hasTokens(): boolean {
     return !!this.getAccessToken() && !!this.getRefreshToken();

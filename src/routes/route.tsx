@@ -5,16 +5,27 @@ import LoginPage from "@/pages/Auth/LoginPage";
 import { PublicRoute } from "@/components/PublicRoute";
 import { PrivateRoute } from "@/components/PrivateRoute";
 
+const HomeLayout = lazy(() => import("@/pages/HomeLayout"));
 const HomePage = lazy(() => import("@/pages/HomePage"));
+const ProfilePage = lazy(() => import("@/pages/Profile/ProfilePage"));
 
 const routes = [
   {
-    path: "/",
     element: (
       <PrivateRoute>
-        <HomePage />
+        <HomeLayout />
       </PrivateRoute>
     ),
+    children: [
+      {
+        path: "/",
+        element: <HomePage />,
+      },
+      {
+        path: "/profile",
+        element: <ProfilePage />,
+      },
+    ],
   },
   {
     element: <AuthLayout />,

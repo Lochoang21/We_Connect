@@ -64,9 +64,19 @@ export interface PostListItem {
   isLiked?: boolean;    // Current user has liked this post
 }
 
+export interface MyPostListItem extends PostListItem {
+  comments?: CommentResponse[];
+  commentsCount?: number;
+}
+
 // Get Posts Response with Pagination
 export interface GetPostsResponse {
   result: PostListItem[];
+  totalPage: number;
+}
+
+export interface GetMyPostsResponse {
+  result: MyPostListItem[];
   totalPage: number;
 }
 

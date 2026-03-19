@@ -107,11 +107,11 @@ export const authService = {
   async logout() {
     try {
       // Clear tokens với prefix
-      tokenStorage.clearTokens();
+      tokenStorage.clearAuth();
     } catch (error) {
       console.error("Logout failed:", error);
       // Vẫn clear local storage dù có lỗi
-      tokenStorage.clearTokens();
+      tokenStorage.clearAuth();
     }
   },
 };

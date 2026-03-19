@@ -7,15 +7,35 @@ import type { AuthState, LoginRequest, LoginResponse, User } from "../../types/a
 import { tokenStorage } from "../../utils/tokenStorage";
 
 // Initial state
+const hasPersistedTokens = tokenStorage.hasTokens();
+
 const initialState: AuthState = {
   user: null,
   accessToken: tokenStorage.getAccessToken(),
   refreshToken: tokenStorage.getRefreshToken(),
-  isAuthenticated: tokenStorage.hasTokens(),
+  isAuthenticated: hasPersistedTokens,
+  isInitialized: false,
   status: 'idle',
   error: null,
   errorCode: null,
 };
+
+export const initializeAuth = createAsyncThunk(
+  "auth/initialize",
+  async (_, { rejectWithValue }) => {
+    if (!tokenStorage.hasTokens()) {
+      return null as User | null;
+    }
+
+    try {
+      const response = await authService.getProfile();
+      return response.data as User;
+    } catch (error: any) {
+      tokenStorage.clearAuth();
+      return rejectWithValue(error?.response?.data?.message || "Failed to initialize auth");
+    }
+  }
+);
 
 // Async thunks
 export const login = createAsyncThunk(
@@ -86,6 +106,7 @@ const authSlice = createSlice({
       state.accessToken = accessToken ?? null;
       state.refreshToken = refreshToken ?? null;
       state.isAuthenticated = !!accessToken;
+      state.isInitialized = true;
 
       if (accessToken) {
         tokenStorage.setAccessToken(accessToken);
@@ -99,10 +120,11 @@ const authSlice = createSlice({
       state.accessToken = null;
       state.refreshToken = null;
       state.isAuthenticated = false;
+      state.isInitialized = true;
       state.status = 'idle';
       state.error = null;
       state.errorCode = null;
-      tokenStorage.clearTokens();
+      tokenStorage.clearAuth();
     },
     clearError: (state) => {
       state.error = null;
@@ -117,6 +139,7 @@ const authSlice = createSlice({
         state.refreshToken = action.payload.refreshToken;
       }
       state.isAuthenticated = true;
+      state.isInitialized = true;
       tokenStorage.setAccessToken(action.payload.accessToken);
       if (action.payload.refreshToken) {
         tokenStorage.setRefreshToken(action.payload.refreshToken);
@@ -126,6 +149,31 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     // Login
     builder
+      .addCase(initializeAuth.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+        state.errorCode = null;
+      })
+      .addCase(initializeAuth.fulfilled, (state, action: PayloadAction<User | null>) => {
+        state.status = 'succeeded';
+        state.user = action.payload;
+        state.accessToken = tokenStorage.getAccessToken();
+        state.refreshToken = tokenStorage.getRefreshToken();
+        state.isAuthenticated = tokenStorage.hasTokens();
+        state.isInitialized = true;
+        state.error = null;
+        state.errorCode = null;
+      })
+      .addCase(initializeAuth.rejected, (state, action) => {
+        state.status = 'failed';
+        state.user = null;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.isAuthenticated = false;
+        state.isInitialized = true;
+        state.error = (action.payload as string) || 'Failed to initialize auth';
+        state.errorCode = null;
+      })
       .addCase(login.pending, (state) => {
         state.status = 'loading';
         state.error = null;
@@ -139,6 +187,7 @@ const authSlice = createSlice({
           state.accessToken = action.payload.access_token;
           state.refreshToken = action.payload.refresh_token;
           state.isAuthenticated = true;
+          state.isInitialized = true;
           state.error = null;
           state.errorCode = null;
 
@@ -149,6 +198,7 @@ const authSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.status = 'failed';
         state.isAuthenticated = false;
+        state.isInitialized = true;
 
         if (typeof action.payload === 'string' || action.payload == null) {
           state.error = action.payload || 'Login failed';
@@ -171,9 +221,10 @@ const authSlice = createSlice({
         state.accessToken = null;
         state.refreshToken = null;
         state.isAuthenticated = false;
+        state.isInitialized = true;
         state.error = null;
         state.errorCode = null;
-        tokenStorage.clearTokens();
+        tokenStorage.clearAuth();
       })
       .addCase(logoutAsync.rejected, (state) => {
         state.status = 'idle';
@@ -182,9 +233,10 @@ const authSlice = createSlice({
         state.accessToken = null;
         state.refreshToken = null;
         state.isAuthenticated = false;
+        state.isInitialized = true;
         state.error = null;
         state.errorCode = null;
-        tokenStorage.clearTokens();
+        tokenStorage.clearAuth();
       })
 
     // Fetch User Profile
@@ -195,6 +247,7 @@ const authSlice = createSlice({
       .addCase(fetchUserProfile.fulfilled, (state, action: PayloadAction<User>) => {
         state.status = 'succeeded';
         state.user = action.payload;
+        state.isInitialized = true;
       })
       .addCase(fetchUserProfile.rejected, (state) => {
         state.status = 'failed';
@@ -203,7 +256,8 @@ const authSlice = createSlice({
         state.accessToken = null;
         state.refreshToken = null;
         state.isAuthenticated = false;
-        tokenStorage.clearTokens();
+        state.isInitialized = true;
+        tokenStorage.clearAuth();
       });
   },
 });
