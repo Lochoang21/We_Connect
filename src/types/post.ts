@@ -80,6 +80,9 @@ export interface GetMyPostsResponse {
   totalPage: number;
 }
 
+// Author posts share the same shape as my-posts response
+export type GetAuthorPostsResponse = GetMyPostsResponse;
+
 // Get Posts Request Params
 export interface GetPostsParams {
   page?: number;

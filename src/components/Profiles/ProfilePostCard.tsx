@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import { ProfileCommentRow } from "@/components/Profiles/ProfileCommentRow"
 import type { CommentItem, PostItem, ProfileUser } from "@/components/Profiles/types"
 import { timeAgo } from "@/components/Profiles/utils"
+import postService from "@/services/postService"
+import { useToast } from "@/hooks/use-toast"
 
 interface ProfilePostCardProps {
   post: PostItem
@@ -12,9 +14,11 @@ interface ProfilePostCardProps {
 }
 
 export function ProfilePostCard({ post, currentUserId, currentUser }: ProfilePostCardProps) {
+  const { toast } = useToast()
   const [isLiked, setIsLiked] = useState(post.isLiked ?? false)
   const [likesCount, setLikesCount] = useState(post.likesCount ?? 0)
   const [isLikeAnim, setIsLikeAnim] = useState(false)
+  const [isLiking, setIsLiking] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
 
   const [isCommentOpen, setIsCommentOpen] = useState(false)
@@ -30,17 +34,41 @@ export function ProfilePostCard({ post, currentUserId, currentUser }: ProfilePos
     if (isCommentOpen) textareaRef.current?.focus()
   }, [isCommentOpen])
 
+  useEffect(() => {
+    setIsLiked(post.isLiked ?? false)
+    setLikesCount(post.likesCount ?? 0)
+  }, [post.id, post.isLiked, post.likesCount])
+
   const MAX_CONTENT_LEN = 180
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    if (!currentUserId) {
+      toast({ title: "Vui long dang nhap de thich bai viet", variant: "destructive" })
+      return
+    }
+
+    if (isLiking) return
+
     setIsLikeAnim(true)
     setTimeout(() => setIsLikeAnim(false), 300)
-    if (!isLiked) {
-      setIsLiked(true)
-      setLikesCount((p) => p + 1)
-    } else {
-      setIsLiked(false)
-      setLikesCount((p) => Math.max(0, p - 1))
+
+    const nextLiked = !isLiked
+    setIsLiked(nextLiked)
+    setLikesCount((prev) => (nextLiked ? prev + 1 : Math.max(0, prev - 1)))
+    setIsLiking(true)
+
+    try {
+      if (nextLiked) {
+        await postService.likePost(post.id)
+      } else {
+        await postService.unlikePost(post.id)
+      }
+    } catch {
+      setIsLiked(!nextLiked)
+      setLikesCount((prev) => (!nextLiked ? prev + 1 : Math.max(0, prev - 1)))
+      toast({ title: nextLiked ? "Thich that bai" : "Bo thich that bai", variant: "destructive" })
+    } finally {
+      setIsLiking(false)
     }
   }
 

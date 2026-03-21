@@ -4,9 +4,10 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  phone?: string;
-  address?: string;
-  image?: string;
+  phone?: string | null;
+  address?: string | null;
+  image?: string | null;
+  bio?: string | null;
   isActive?: boolean;
   active?: number;
   is_active?: number | boolean;

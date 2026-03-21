@@ -1,18 +1,29 @@
 import { useEffect, useMemo, useState } from "react"
+import { useParams } from "react-router-dom"
 import { ProfileFeed } from "@/components/Profiles/ProfileFeed"
 import { ProfileHeader } from "@/components/Profiles/ProfileHeader"
 import { ProfileSidebar } from "@/components/Profiles/ProfileSidebar"
 import { useAppDispatch, useAppSelector } from "@/redux/hooks"
 import { fetchUserProfile } from "@/redux/slices/authSlice"
 import postService from "@/services/postService"
+import userService from "@/services/userService"
 import type { CommentResponse, MyPostListItem } from "@/types/post"
 import type { PostItem } from "@/components/Profiles/types"
+import type { User } from "@/types/auth"
 
 export function ProfilePage() {
+  const { id } = useParams()
   const dispatch = useAppDispatch()
   const { user, status } = useAppSelector((state) => state.auth)
   const [myPosts, setMyPosts] = useState<MyPostListItem[]>([])
+  const [authorPosts, setAuthorPosts] = useState<MyPostListItem[]>([])
   const [postsLoading, setPostsLoading] = useState(false)
+  const [viewedUser, setViewedUser] = useState<User | null>(null)
+  const [viewedUserLoading, setViewedUserLoading] = useState(false)
+  const [viewedUserError, setViewedUserError] = useState<string | null>(null)
+
+  const isViewingOtherUser = Boolean(id)
+  const isOwnProfile = !id || id === user?.id
 
   useEffect(() => {
     if (!user) {
@@ -21,24 +32,70 @@ export function ProfilePage() {
   }, [dispatch, user])
 
   useEffect(() => {
-    const fetchMyPosts = async () => {
-      if (!user) return
+    const fetchViewedUser = async () => {
+      if (!id || id === user?.id) {
+        setViewedUser(null)
+        setViewedUserError(null)
+        return
+      }
+
+      try {
+        setViewedUserLoading(true)
+        setViewedUserError(null)
+        const profile = await userService.getUserById(id)
+        setViewedUser(profile)
+      } catch (error) {
+        console.error("Load user profile by id failed:", error)
+        setViewedUserError("Khong the tai thong tin nguoi dung.")
+      } finally {
+        setViewedUserLoading(false)
+      }
+    }
+
+    fetchViewedUser()
+  }, [id, user?.id])
+
+  useEffect(() => {
+    const fetchProfilePosts = async () => {
+      if (!isOwnProfile && !id) {
+        setAuthorPosts([])
+        return
+      }
+
+      if (isOwnProfile && !user) {
+        setMyPosts([])
+        return
+      }
+
       try {
         setPostsLoading(true)
-        const response = await postService.getMyPosts()
-        setMyPosts(response.result)
+        if (isOwnProfile) {
+          const response = await postService.getMyPosts()
+          setMyPosts(response.result)
+          setAuthorPosts([])
+        } else if (id) {
+          const response = await postService.getPostsByAuthor(id)
+          setAuthorPosts(response.result)
+          setMyPosts([])
+        }
       } catch (error) {
-        console.error("Load my posts failed:", error)
+        console.error("Load profile posts failed:", error)
+        setMyPosts([])
+        setAuthorPosts([])
       } finally {
         setPostsLoading(false)
       }
     }
 
-    fetchMyPosts()
-  }, [user])
+    fetchProfilePosts()
+  }, [user, isOwnProfile, id])
+
+  const profileUser = isOwnProfile ? user : viewedUser
 
   const profilePosts = useMemo<PostItem[]>(() => {
-    return myPosts.map((post) => ({
+    const sourcePosts = isOwnProfile ? myPosts : authorPosts
+
+    return sourcePosts.map((post) => ({
       id: post.id,
       user: {
         id: post.user.id,
@@ -63,9 +120,25 @@ export function ProfilePage() {
         parentCommentId: comment.parentCommentId,
       })),
     }))
-  }, [myPosts])
+  }, [myPosts, authorPosts, isOwnProfile])
 
-  if (status === "loading" && !user) {
+  if (isViewingOtherUser && viewedUserLoading) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="rounded-2xl border border-border/60 bg-card p-6 text-sm text-muted-foreground">Dang tai thong tin nguoi dung...</div>
+      </div>
+    )
+  }
+
+  if (isViewingOtherUser && viewedUserError) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="rounded-2xl border border-border/60 bg-card p-6 text-sm text-muted-foreground">{viewedUserError}</div>
+      </div>
+    )
+  }
+
+  if (!isViewingOtherUser && status === "loading" && !user) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="rounded-2xl border border-border/60 bg-card p-6 text-sm text-muted-foreground">Đang tải thông tin cá nhân...</div>
@@ -73,26 +146,33 @@ export function ProfilePage() {
     )
   }
 
-  if (!user) {
+  if (!profileUser) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="rounded-2xl border border-border/60 bg-card p-6 text-sm text-muted-foreground">Không thể tải thông tin cá nhân.</div>
+        <div className="rounded-2xl border border-border/60 bg-card p-6 text-sm text-muted-foreground">Khong the tai thong tin nguoi dung.</div>
       </div>
     )
   }
 
   return (
     <div className="bg-background">
-      <ProfileHeader user={user} isOwn={true} />
+      <ProfileHeader user={profileUser} isOwn={isOwnProfile} />
 
       <main className="max-w-5xl mx-auto px-4 py-4">
         <div className="flex flex-col lg:flex-row gap-4">
-          <ProfileSidebar user={user} />
+          <ProfileSidebar user={profileUser} />
           <div className="flex-1 min-w-0">
             {postsLoading ? (
-              <div className="rounded-2xl border border-border/60 bg-card p-6 text-sm text-muted-foreground">Đang tải bài viết của bạn...</div>
+              <div className="rounded-2xl border border-border/60 bg-card p-6 text-sm text-muted-foreground">
+                {isOwnProfile ? "Đang tải bài viết của bạn..." : "Đang tải bài viết của người dùng..."}
+              </div>
             ) : (
-              <ProfileFeed user={user} posts={profilePosts} currentUserId={user.id} />
+              <ProfileFeed
+                user={profileUser}
+                posts={profilePosts}
+                currentUserId={user?.id ?? ""}
+                isOwn={isOwnProfile}
+              />
             )}
           </div>
         </div>

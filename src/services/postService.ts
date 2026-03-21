@@ -5,6 +5,7 @@ import type {
   CreatePostResponse,
   GetPostsResponse,
   GetMyPostsResponse,
+  GetAuthorPostsResponse,
   GetPostsParams,
   ApiResponse,
   CloudinaryUploadResponse,
@@ -37,6 +38,12 @@ export const postAPI = {
   getMyPosts: () =>
     API.posts.getMyPosts() as Promise<{
       data: ApiResponse<GetMyPostsResponse>;
+    }>,
+
+  // Get posts by author id
+  getPostsByAuthor: (authorId: string) =>
+    API.posts.getPostsByAuthor(authorId) as Promise<{
+      data: ApiResponse<GetAuthorPostsResponse>;
     }>,
 
   // Like a post
@@ -201,6 +208,21 @@ export const postService = {
     } catch (error: unknown) {
       console.error("Get my posts error:", error);
       throw new Error(getErrorMessage(error, "Failed to get my posts"));
+    }
+  },
+
+  /**
+   * Get posts by author id
+   * @param authorId - Author user id
+   * @returns Author posts list with pagination info
+   */
+  getPostsByAuthor: async (authorId: string): Promise<GetAuthorPostsResponse> => {
+    try {
+      const response = await postAPI.getPostsByAuthor(authorId);
+      return response.data.data;
+    } catch (error: unknown) {
+      console.error("Get posts by author error:", error);
+      throw new Error(getErrorMessage(error, "Failed to get posts by author"));
     }
   },
 

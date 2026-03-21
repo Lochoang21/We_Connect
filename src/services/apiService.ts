@@ -184,6 +184,10 @@ export const API = {
     // Search users for friend suggestions / add friend flow
     searchFriends: (params?: Record<string, unknown>) =>
       fetch.get("/api/v1/users/search-friends", { params }),
+
+    // Public-ish user detail by id
+    getUserById: (id: number | string) =>
+      fetch.get(`/api/v1/users/${id}`),
   },
 
   posts: {
@@ -205,6 +209,10 @@ export const API = {
 
     // Get current user's posts
     getMyPosts: () => fetch.get("api/v1/posts/me"),
+
+    // Get posts by author id
+    getPostsByAuthor: (authorId: string) =>
+      fetch.get(`api/v1/posts/author/${authorId}`),
 
     // Like a post
     likePost: (postId: string) => fetch.post(`api/v1/posts/${postId}/like`),

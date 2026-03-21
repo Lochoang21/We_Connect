@@ -1,12 +1,9 @@
-import { Search, Bell, MessageSquare, ChevronDown, User, Settings, LogOut } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { Bell, MessageSquare, ChevronDown, User, Settings, LogOut } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -14,6 +11,7 @@ import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { logoutAsync } from "@/redux/slices/authSlice"
 import type { RootState, AppDispatch } from "@/redux/store"
+import { NavbarSearch } from "../Friends/NavbarSearch"
 
 export function Navbar() {
   const dispatch = useDispatch<AppDispatch>()
@@ -25,71 +23,143 @@ export function Navbar() {
     navigate("/login")
   }
 
-  // Get user initials for avatar
-  const userInitials = user?.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase() || "U"
+  const userInitials =
+    user?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase() || "U"
 
   return (
-    <nav className="sticky top-0 z-50 bg-card border-b border-border">
-      <div className="flex items-center justify-between px-6 py-3 max-w-[1400px] mx-auto">
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">W</span>
+    <nav className="sticky top-0 z-50 bg-card/85 backdrop-blur-xl border-b border-border/60">
+      <div className="flex items-center justify-between gap-6 px-6 h-[58px] max-w-[1400px] mx-auto">
+
+        {/* ── Logo ── */}
+        <a
+          href="/"
+          className="flex items-center gap-2.5 flex-shrink-0 no-underline group"
+        >
+          <div className="w-[34px] h-[34px] bg-primary rounded-[10px] flex items-center justify-center
+            shadow-md shadow-primary/30
+            transition-all duration-150 group-hover:-translate-y-px group-hover:shadow-lg group-hover:shadow-primary/40"
+          >
+            <span className="text-primary-foreground font-extrabold text-[15px]">W</span>
           </div>
-          <span className="font-semibold text-lg">WeShare</span>
+          <span className="text-[16px] font-bold text-foreground tracking-tight">
+            WeShare
+          </span>
+        </a>
+
+        {/* ── Search — centred ── */}
+        <div className="flex-1 flex justify-center">
+          <NavbarSearch />
         </div>
 
-        {/* Search Bar */}
-        <div className="flex-1 max-w-md mx-8">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input type="text" placeholder="Search" className="pl-10 bg-muted/50 border-0" />
-          </div>
-        </div>
+        {/* ── Right zone ── */}
+        <div className="flex items-center gap-2 flex-shrink-0">
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="relative">
-            <MessageSquare className="w-5 h-5" />
-          </Button>
+          {/* Bell */}
+          <button
+            title="Thông báo"
+            className="relative w-[38px] h-[38px] rounded-full flex items-center justify-center
+              bg-muted/60 text-foreground/75
+              hover:bg-muted hover:text-foreground hover:-translate-y-px
+              transition-all duration-150 cursor-pointer border-0"
+          >
+            <Bell size={18} />
+            {/* Badge — uncomment when needed:
+            <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-destructive
+              border-2 border-card" />
+            */}
+          </button>
 
+          {/* Messages */}
+          <button
+            title="Tin nhắn"
+            onClick={() => navigate("/messages")}
+            className="relative w-[38px] h-[38px] rounded-full flex items-center justify-center
+              bg-muted/60 text-foreground/75
+              hover:bg-muted hover:text-foreground hover:-translate-y-px
+              transition-all duration-150 cursor-pointer border-0"
+          >
+            <MessageSquare size={18} />
+          </button>
+
+          {/* Divider */}
+          <div className="w-px h-5 bg-border/60 mx-1 flex-shrink-0" />
+
+          {/* ── User dropdown ── */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-2">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={user?.image || "/placeholder.svg?height=32&width=32"} />
-                  <AvatarFallback>{userInitials}</AvatarFallback>
+              <button
+                className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full
+                  border border-border/60 bg-transparent cursor-pointer
+                  hover:bg-muted/50 hover:border-border
+                  transition-all duration-150 focus:outline-none"
+              >
+                <Avatar className="w-7 h-7 flex-shrink-0">
+                  <AvatarImage src={user?.image || ""} />
+                  <AvatarFallback className="text-[11px] font-bold">
+                    {userInitials}
+                  </AvatarFallback>
                 </Avatar>
-                <span className="font-medium">{user?.name || "User"}</span>
-                <ChevronDown className="w-4 h-4" />
-              </Button>
+                <span className="text-[13.5px] font-semibold text-foreground
+                  max-w-[120px] truncate hidden sm:block">
+                  {user?.name || "User"}
+                </span>
+                <ChevronDown size={14} className="text-muted-foreground flex-shrink-0" />
+              </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/profile")}>
-                <User className="mr-2 h-4 w-4" />
-                <span>Trang cá nhân</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/settings")}>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Cài đặt</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Đăng xuất</span>
-              </DropdownMenuItem>
+
+            <DropdownMenuContent
+              align="end"
+              sideOffset={8}
+              className="w-[220px] rounded-2xl border border-border/60
+                shadow-xl shadow-black/10 p-0 overflow-hidden"
+            >
+              {/* User info header */}
+              <div className="px-3.5 py-3 border-b border-border/50">
+                <p className="m-0 text-[13.5px] font-bold text-foreground leading-snug">
+                  {user?.name || "User"}
+                </p>
+                <p className="m-0 mt-0.5 text-[12px] text-muted-foreground truncate">
+                  {user?.email || ""}
+                </p>
+              </div>
+
+              <div className="p-1.5">
+                <DropdownMenuItem
+                  onClick={() => navigate("/profile")}
+                  className="rounded-lg text-[13.5px] cursor-pointer gap-2.5 px-2.5 py-2"
+                >
+                  <User size={15} />
+                  Trang cá nhân
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate("/settings")}
+                  className="rounded-lg text-[13.5px] cursor-pointer gap-2.5 px-2.5 py-2"
+                >
+                  <Settings size={15} />
+                  Cài đặt
+                </DropdownMenuItem>
+              </div>
+
+              <DropdownMenuSeparator className="my-0" />
+
+              <div className="p-1.5">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="rounded-lg text-[13.5px] cursor-pointer gap-2.5 px-2.5 py-2
+                    text-destructive focus:text-destructive focus:bg-destructive/10"
+                >
+                  <LogOut size={15} />
+                  Đăng xuất
+                </DropdownMenuItem>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
       </div>
     </nav>
   )

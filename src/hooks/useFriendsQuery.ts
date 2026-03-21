@@ -64,14 +64,17 @@ export const useUserFriends = (userId: number, params: FriendQueryParams = {}) =
 /**
  * Tìm user để kết bạn.
  */
-export const useSearchFriendsUsers = (params: FriendQueryParams = {}) =>
+export const useSearchFriendsUsers = (
+  params: FriendQueryParams = {},
+  options: { enabled?: boolean } = {}
+) =>
   useQuery({
     queryKey: friendQueryKeys.searchUsers(params),
     queryFn: async () => {
       const response = await friendAPI.searchFriends(params);
       return response.data.data;
     },
-    enabled: !!params.query?.trim(),
+    enabled: options.enabled ?? !!params.query?.trim(),
     placeholderData: keepPreviousData,
     staleTime: 15_000,
   });

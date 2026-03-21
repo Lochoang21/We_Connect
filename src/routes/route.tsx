@@ -9,6 +9,7 @@ import { FriendListPage } from "@/components/Friends/FriendListPage";
 const HomeLayout = lazy(() => import("@/pages/HomeLayout"));
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const ProfilePage = lazy(() => import("@/pages/Profile/ProfilePage"));
+const SearchPage = lazy(() => import("@/pages/SearchPage/SearchPage"));
 
 const routes = [
   {
@@ -27,8 +28,16 @@ const routes = [
         element: <ProfilePage />,
       },
       {
+        path: "/profile/:id",
+        element: <ProfilePage />,
+      },
+      {
         path: "/friends",
         element: <FriendListPage />,
+      },
+      {
+        path: "/search",
+        element: <SearchPage />,
       },
     ],
   },
