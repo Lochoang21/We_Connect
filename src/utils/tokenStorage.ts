@@ -38,4 +38,24 @@ export const tokenStorage = {
   hasTokens(): boolean {
     return !!this.getAccessToken() && !!this.getRefreshToken();
   },
+
+  getUserIdFromAccessToken(): number | null {
+    const token = this.getAccessToken();
+    if (!token) return null;
+
+    try {
+      const [, payload] = token.split('.');
+      if (!payload) return null;
+
+      const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const decoded = atob(normalized.padEnd(normalized.length + (4 - (normalized.length % 4 || 4)) % 4, '='));
+      const parsed = JSON.parse(decoded) as Record<string, unknown>;
+      const rawId = parsed.sub ?? parsed.userId ?? parsed.id;
+      const userId = Number(rawId);
+
+      return Number.isFinite(userId) ? userId : null;
+    } catch {
+      return null;
+    }
+  },
 };

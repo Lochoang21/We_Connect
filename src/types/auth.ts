@@ -54,6 +54,7 @@ export interface UpdateProfileRequest {
   phone?: string;
   address?: string;
   image?: string;
+  bio?: string;
 }
 
 export interface RefreshTokenRequest {

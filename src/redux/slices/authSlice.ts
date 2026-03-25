@@ -3,8 +3,13 @@
 
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import { authService } from "../../services/authService";
-import type { AuthState, LoginRequest, LoginResponse, User } from "../../types/auth";
+import type { AuthState, LoginRequest, User } from "../../types/auth";
 import { tokenStorage } from "../../utils/tokenStorage";
+
+interface LoginSuccessPayload {
+  access_token: string;
+  refresh_token: string;
+}
 
 // Initial state
 const hasPersistedTokens = tokenStorage.hasTokens();
@@ -43,8 +48,13 @@ export const login = createAsyncThunk(
   async (credentials: LoginRequest, { rejectWithValue }) => {
     try {
       const response = await authService.login(credentials);
-      return response.data;
+      const loginData = response.data;
+      return {
+        access_token: loginData.access_token,
+        refresh_token: loginData.refresh_token,
+      } as LoginSuccessPayload;
     } catch (error: any) {
+      tokenStorage.clearAuth();
       const errorData = error?.response?.data || {};
       const msg = errorData.message || errorData.error || 'Login failed';
 
@@ -62,6 +72,23 @@ export const login = createAsyncThunk(
 
       return rejectWithValue({ message: msg, code });
     }
+  }
+);
+
+export const loginAndFetchProfile = createAsyncThunk(
+  "auth/loginAndFetchProfile",
+  async (credentials: LoginRequest, { dispatch, rejectWithValue }) => {
+    const loginResult = await dispatch(login(credentials));
+    if (login.rejected.match(loginResult)) {
+      return rejectWithValue(loginResult.payload ?? "Login failed");
+    }
+
+    const profileResult = await dispatch(fetchUserProfile());
+    if (fetchUserProfile.rejected.match(profileResult)) {
+      return rejectWithValue(profileResult.payload ?? "Failed to fetch profile");
+    }
+
+    return profileResult.payload as User;
   }
 );
 
@@ -181,9 +208,9 @@ const authSlice = createSlice({
       })
       .addCase(
         login.fulfilled,
-        (state, action: PayloadAction<LoginResponse>) => {
+        (state, action: PayloadAction<LoginSuccessPayload>) => {
           state.status = 'succeeded';
-          state.user = action.payload.user;
+          state.user = null;
           state.accessToken = action.payload.access_token;
           state.refreshToken = action.payload.refresh_token;
           state.isAuthenticated = true;
@@ -207,6 +234,20 @@ const authSlice = createSlice({
           const payload = action.payload as { message: string; code: number };
           state.error = payload.message || 'Login failed';
           state.errorCode = typeof payload.code === 'number' ? payload.code : null;
+        }
+      })
+      .addCase(loginAndFetchProfile.rejected, (state, action) => {
+        if (typeof action.payload === 'string' || action.payload == null) {
+          state.error = action.payload || state.error || 'Login failed';
+          return;
+        }
+
+        const payload = action.payload as { message?: string; code?: number };
+        if (payload.message) {
+          state.error = payload.message;
+        }
+        if (typeof payload.code === 'number') {
+          state.errorCode = payload.code;
         }
       });
 

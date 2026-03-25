@@ -143,43 +143,10 @@ export const API = {
   },
 
   user: {
-    // File Upload
-    uploadFile: (file: File) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      return fetch.post("/api/v1/user/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-    },
-    uploadFileToServer: (file: File) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      return fetch.post("/api/v1/user/uploads", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-    },
 
-    // User Profile & Management
-    getUserProfile: () => fetch.get("/api/v1/user/user-profile"),
-    updateProfile: (data: UpdateProfileRequest) => fetch.put("/api/v1/user/profile", data),
-
-    // Password Change
-    sendOTPChangePassword: (data: EmailRequest) =>
-      fetch.post("/api/v1/user/send-otp-change-password", data),
-    changePasswordUser: (data: ChangePasswordRequest) =>
-      fetch.post("/api/v1/user/change-password", data),
-
-    // Sub Email Management
-    sendSubEmailOtp: (data: EmailRequest) =>
-      fetch.post("/api/v1/user/send-otp-add-subemail", data),
-    addSubEmail: (data: EmailRequest) =>
-      fetch.post("/api/v1/user/add-subemail", data),
-    removeSubEmail: (data: { email: string }) =>
-      fetch.post("/api/v1/user/remove-subemail", data),
+    // Update current user profile
+    updateProfile: (data: UpdateProfileRequest) =>
+      fetch.put("/api/v1/users/profile", data),
 
     // Search users for friend suggestions / add friend flow
     searchFriends: (params?: Record<string, unknown>) =>

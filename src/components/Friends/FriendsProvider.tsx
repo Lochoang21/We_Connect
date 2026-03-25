@@ -69,13 +69,15 @@ export const FriendsProvider = ({ children }: FriendsProviderProps) => {
     // Người kia hủy lời mời họ đã gửi cho mình
     onRequestCancelled: (payload: FriendRequestCancelledEvent) => {
       onRequestCancelled(payload.friendId);
-      queryClient.invalidateQueries({ queryKey: friendQueryKeys.pending({}) });
+      // Invalidate all friend-related queries so Search/Profile state updates in real-time.
+      queryClient.invalidateQueries({ queryKey: friendQueryKeys.all });
     },
 
     // Bị người kia unfriend
     onUnfriended: (_payload: UnfriendedEvent) => {
       onUnfriended();
-      queryClient.invalidateQueries({ queryKey: friendQueryKeys.list({}) });
+      // Invalidate all friend-related queries so Search/Profile state updates in real-time.
+      queryClient.invalidateQueries({ queryKey: friendQueryKeys.all });
     },
   });
 

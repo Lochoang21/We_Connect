@@ -1,9 +1,11 @@
 import { API } from "./apiService"
-import type { ApiResponse, User } from "@/types/auth"
+import type { ApiResponse, UpdateProfileRequest, User } from "@/types/auth"
 
 export const userAPI = {
   getUserById: (id: number | string) =>
     API.user.getUserById(id) as Promise<{ data: ApiResponse<User> }>,
+  updateProfile: (data: UpdateProfileRequest) =>
+    API.user.updateProfile(data) as Promise<{ data: ApiResponse<User> }>,
 }
 
 function getErrorMessage(error: unknown, fallback = "Loi khong xac dinh"): string {
@@ -23,6 +25,15 @@ export const userService = {
     } catch (error: unknown) {
       console.error("Get user by id error:", error)
       throw new Error(getErrorMessage(error, "Failed to get user detail"))
+    }
+  },
+  updateProfile: async (data: UpdateProfileRequest): Promise<User> => {
+    try {
+      const response = await userAPI.updateProfile(data)
+      return response.data.data
+    } catch (error: unknown) {
+      console.error("Update profile error:", error)
+      throw new Error(getErrorMessage(error, "Failed to update profile"))
     }
   },
 }

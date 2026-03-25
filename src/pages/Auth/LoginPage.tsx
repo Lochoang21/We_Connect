@@ -5,8 +5,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
-import { login } from "@/redux/slices/authSlice";
-import type { LoginResponse } from "@/types/auth";
+import { loginAndFetchProfile } from "@/redux/slices/authSlice";
 import { useSnackbar } from "@/context/AlertProvider";
 import ForgotPasswordModal from "@/components/Auth/ForgotPasswordModal";
 import AccountActivationModal from "@/components/Auth/AccountActivationModal";
@@ -49,22 +48,9 @@ const LoginPage = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     const payload = { username: data.email, password: data.password };
-    const result = await dispatch(login(payload) as any);
+    const result = await dispatch(loginAndFetchProfile(payload) as any);
     console.log("Login result:", result);
-    if (login.fulfilled.match(result)) {
-      const user = (result.payload as LoginResponse | undefined)?.user;
-      const isInactive =
-        user?.active === 0 ||
-        user?.isActive === false ||
-        user?.is_active === 0 ||
-        user?.status === 0 ||
-        user?.is_active === false;
-
-      if (isInactive) {
-        setOpenActivationModal(true);
-        return;
-      }
-
+    if (loginAndFetchProfile.fulfilled.match(result)) {
       // openSnackbar({ message: "Login successfully", severity: "success" });
       navigate("/");
     }
