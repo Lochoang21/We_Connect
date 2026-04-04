@@ -280,6 +280,20 @@ export const postService = {
       throw new Error(getErrorMessage(error, "Failed to comment on post"));
     }
   },
+  /**
+   * Lấy danh sách ảnh của tác giả
+   * @param userId - ID người dùng
+   * @returns Danh sách URL ảnh
+   */
+  getAuthorImages: async (userId: number | string): Promise<string[]> => {
+    try {
+      const response = await API.posts.getAuthorImages(userId);
+      return response.data.data;
+    } catch (error: unknown) {
+      console.error("Get author images error:", error);
+      throw new Error(getErrorMessage(error, "Failed to get author images"));
+    }
+  },
 };
 
 export default postService;

@@ -2,6 +2,7 @@
 
 import { API } from "./apiService";
 import type {
+  CurrentUserFriendsResponse,
   FriendRecord,
   FriendQueryParams,
   PaginatedFriends,
@@ -32,6 +33,12 @@ export const friendAPI = {
       data: ApiResponse<FriendRecord>;
     }>,
 
+  // Reject friend request
+  rejectRequest: (targetUserId: number | string) =>
+    API.friends.rejectRequest(toNumericId(targetUserId)) as Promise<{
+      data: ApiResponse<FriendRecord>;
+    }>,
+
   // Cancel sent friend request
   cancelRequest: (targetUserId: number | string) =>
     API.friends.cancelRequest(toNumericId(targetUserId)) as Promise<{
@@ -48,6 +55,12 @@ export const friendAPI = {
   getFriendsList: (params?: FriendQueryParams) =>
     API.friends.getFriendsList(params as Record<string, unknown>) as Promise<{
       data: ApiResponse<PaginatedFriends>;
+    }>,
+
+  // Get current user's friends list (GET /api/v1/friends)
+  getCurrentUserFriends: (params?: FriendQueryParams) =>
+    API.friends.getFriendsList(params as Record<string, unknown>) as Promise<{
+      data: ApiResponse<CurrentUserFriendsResponse>;
     }>,
 
   // Get pending friend requests
@@ -120,6 +133,23 @@ export const friendService = {
   },
 
   /**
+   * Từ chối lời mời kết bạn
+   * @param targetUserId - ID của người gửi lời mời
+   * @returns Friend record sau khi từ chối
+   */
+  rejectRequest: async (targetUserId: number | string): Promise<FriendRecord> => {
+    try {
+      const response = await friendAPI.rejectRequest(targetUserId);
+      return response.data.data;
+    } catch (error: unknown) {
+      console.error("Reject friend request error:", error);
+      throw new Error(
+        getErrorMessage(error, "Failed to reject friend request")
+      );
+    }
+  },
+
+  /**
    * Hủy lời mời kết bạn đã gửi
    * @param targetUserId - ID của người đã gửi lời mời tới
    * @returns Friend record sau khi hủy
@@ -165,6 +195,23 @@ export const friendService = {
     } catch (error: unknown) {
       console.error("Get friends list error:", error);
       throw new Error(getErrorMessage(error, "Failed to get friends list"));
+    }
+  },
+
+  /**
+   * Lấy danh sách bạn bè của người dùng hiện tại
+   * @param params - Query parameters (query, current, pageSize)
+   * @returns Danh sách bạn bè hiện tại với pagination
+   */
+  getCurrentUserFriends: async (
+    params?: FriendQueryParams
+  ): Promise<CurrentUserFriendsResponse> => {
+    try {
+      const response = await friendAPI.getCurrentUserFriends(params);
+      return response.data.data;
+    } catch (error: unknown) {
+      console.error("Get current user friends error:", error);
+      throw new Error(getErrorMessage(error, "Failed to get current user friends"));
     }
   },
 

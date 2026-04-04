@@ -2,262 +2,250 @@
 import { useState, useEffect } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import {
-  Users, 
-  // MapPin, Calendar, 
-  MessageSquare, UserPlus,
-  Clock, UserCheck, UserX, Search, ChevronLeft, ChevronRight,
+  Users,
+  MessageSquare,
+  UserPlus,
+  Clock,
+  UserCheck,
+  UserX,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import {
   useSearchFriendsUsers,
   useSendFriendRequest,
   useAcceptFriendRequest,
+  useRejectFriendRequest,
   useCancelFriendRequest,
   useUnfriend,
   usePendingRequests,
 } from "../../hooks/useFriendsQuery"
 import type { SearchFriendUser } from "../../types/friend.types"
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const C = {
-  primary: "#2563EB",
-  primaryHover: "#1D4ED8",
-  primaryLight: "#EFF6FF",
-  primaryMid: "#BFDBFE",
-  danger: "#DC2626",
-  dangerLight: "#FEF2F2",
-  dangerMid: "#FECACA",
-  success: "#059669",
-  successLight: "#ECFDF5",
-  successMid: "#A7F3D0",
-  warn: "#D97706",
-  warnLight: "#FFFBEB",
-  warnMid: "#FDE68A",
-  bg: "#F8FAFC",
-  surface: "#FFFFFF",
-  border: "#E2E8F0",
-  borderStrong: "#CBD5E1",
-  text: "#0F172A",
-  textSub: "#475569",
-  textMuted: "#94A3B8",
-  skeleton: "#F1F5F9",
-}
-
-const AVATAR_PALETTE: [string, string][] = [
-  ["#1E40AF", "#3B82F6"],
-  ["#7C3AED", "#A78BFA"],
-  ["#065F46", "#34D399"],
-  ["#9D174D", "#F472B6"],
-  ["#92400E", "#FCD34D"],
-  ["#1E3A5F", "#60A5FA"],
+// ─── Avatar helpers ───────────────────────────────────────────────────────────
+const AVATAR_COLORS = [
+  "from-blue-500 to-blue-700",
+  "from-violet-500 to-violet-700",
+  "from-emerald-500 to-emerald-700",
+  "from-rose-500 to-rose-700",
+  "from-amber-500 to-amber-600",
+  "from-cyan-500 to-cyan-700",
 ]
-const avatarGrad = (id: number) => AVATAR_PALETTE[id % AVATAR_PALETTE.length]
+const avatarColor = (id: number) => AVATAR_COLORS[id % AVATAR_COLORS.length]
 const getInitials = (name: string) =>
-  name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
-
-// ─── Global styles ────────────────────────────────────────────────────────────
-const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-  * { box-sizing: border-box; }
-  .sp-root { font-family: 'Plus Jakarta Sans', sans-serif; }
-
-  @keyframes sp-pulse {
-    0%, 100% { opacity: 1 }
-    50%       { opacity: 0.45 }
-  }
-  @keyframes sp-in {
-    from { opacity: 0; transform: translateY(10px) }
-    to   { opacity: 1; transform: translateY(0) }
-  }
-
-  .sp-card {
-    background: ${C.surface};
-    border: 1px solid ${C.border};
-    border-radius: 16px;
-    padding: 24px 20px 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
-    cursor: pointer;
-    animation: sp-in 0.22s ease both;
-    position: relative;
-    overflow: hidden;
-  }
-  .sp-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, ${C.primary}, #60A5FA);
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  .sp-card:hover {
-    box-shadow: 0 8px 32px rgba(37,99,235,0.10), 0 2px 8px rgba(0,0,0,0.05);
-    transform: translateY(-3px);
-    border-color: ${C.primaryMid};
-  }
-  .sp-card:hover::before { opacity: 1; }
-
-  .sp-btn {
-    display: flex; align-items: center; justify-content: center;
-    gap: 6px; padding: 9px 14px; border-radius: 8px;
-    font-size: 13px; font-weight: 600; cursor: pointer;
-    border: none; transition: all 0.15s;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    white-space: nowrap;
-    line-height: 1;
-  }
-  .sp-btn:disabled { opacity: 0.65; cursor: not-allowed; }
-
-  .sp-btn-primary { background: ${C.primary}; color: #fff; }
-  .sp-btn-primary:not(:disabled):hover { background: ${C.primaryHover}; }
-
-  .sp-btn-ghost {
-    background: ${C.primaryLight}; color: ${C.primary};
-    border: 1.5px solid ${C.primaryMid};
-  }
-  .sp-btn-ghost:not(:disabled):hover {
-    background: ${C.primary}; color: #fff; border-color: ${C.primary};
-  }
-
-  .sp-btn-success { background: ${C.success}; color: #fff; }
-  .sp-btn-success:not(:disabled):hover { background: #047857; }
-
-  .sp-btn-neutral {
-    background: #F8FAFC; color: ${C.textSub};
-    border: 1.5px solid ${C.border};
-  }
-  .sp-btn-neutral:not(:disabled):hover { background: ${C.border}; }
-
-  .sp-btn-danger {
-    background: ${C.dangerLight}; color: ${C.danger};
-    border: 1.5px solid ${C.dangerMid};
-  }
-  .sp-btn-danger:not(:disabled):hover {
-    background: ${C.danger}; color: #fff; border-color: ${C.danger};
-  }
-
-  .sp-badge-warn {
-    display: flex; align-items: center; gap: 5px;
-    padding: 9px 12px; border-radius: 8px;
-    background: ${C.warnLight}; color: ${C.warn};
-    border: 1.5px solid ${C.warnMid};
-    font-size: 13px; font-weight: 600;
-    line-height: 1;
-  }
-
-  .sp-pagbtn {
-    display: flex; align-items: center; gap: 4px;
-    padding: 8px 16px; border-radius: 8px;
-    border: 1.5px solid ${C.border};
-    background: ${C.surface};
-    font-size: 13px; font-weight: 600; color: ${C.textSub};
-    cursor: pointer; transition: all 0.15s;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-  }
-  .sp-pagbtn:not(:disabled):hover {
-    border-color: ${C.primary}; color: ${C.primary}; background: ${C.primaryLight};
-  }
-  .sp-pagbtn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-  .sp-pgnum {
-    width: 36px; height: 36px; border-radius: 8px;
-    font-size: 13px; cursor: pointer;
-    transition: all 0.15s;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    display: flex; align-items: center; justify-content: center;
-  }
-`
+  name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase()
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 const UserAvatar = ({
-  src, name, id, size = 72,
-}: { src?: string | null; name: string; id: number; size?: number }) => {
-  const [from, to] = avatarGrad(id)
+  src,
+  name,
+  id,
+  size = "lg",
+}: {
+  src?: string | null
+  name: string
+  id: number
+  size?: "sm" | "lg"
+}) => {
+  const sizeClass = size === "lg" ? "w-16 h-16 text-xl" : "w-10 h-10 text-sm"
   return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      overflow: "hidden",
-      background: `linear-gradient(135deg, ${from}, ${to})`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.32, fontWeight: 800, color: "#fff",
-      letterSpacing: "-0.5px",
-      boxShadow: `0 0 0 3px #fff, 0 0 0 5px ${from}44`,
-    }}>
-      {src
-        ? <img src={src} alt={name}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-        : getInitials(name)}
+    <div
+      className={`relative flex-shrink-0 ${sizeClass} rounded-full bg-gradient-to-br ${avatarColor(id)} flex items-center justify-center font-bold text-white ring-2 ring-white shadow-sm overflow-hidden`}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            ;(e.target as HTMLImageElement).style.display = "none"
+          }}
+        />
+      ) : (
+        getInitials(name)
+      )}
     </div>
   )
 }
 
-// ─── Status pill ──────────────────────────────────────────────────────────────
-const StatusPill = ({ isFriend, isIncoming, isOutgoing }: {
-  isFriend?: boolean; isIncoming?: boolean; isOutgoing?: boolean
+// ─── Status Badge ─────────────────────────────────────────────────────────────
+const StatusBadge = ({
+  isFriend,
+  isIncoming,
+  isOutgoing,
+}: {
+  isFriend?: boolean
+  isIncoming?: boolean
+  isOutgoing?: boolean
 }) => {
   if (!isFriend && !isIncoming && !isOutgoing) return null
-  const pill = isFriend
-    ? { bg: C.successLight, color: C.success, border: C.successMid, label: "✓ Friend" }
-    : isIncoming
-      ? { bg: C.primaryLight, color: C.primary, border: C.primaryMid, label: "Sent you a request" }
-      : { bg: C.warnLight, color: C.warn, border: C.warnMid, label: "Pending" }
 
+  if (isFriend)
+    return (
+      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+        Friend
+      </span>
+    )
+  if (isIncoming)
+    return (
+      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+        Wants to connect
+      </span>
+    )
   return (
-    <div style={{
-      position: "absolute", top: 14, right: 14,
-      background: pill.bg, color: pill.color,
-      border: `1px solid ${pill.border}`,
-      borderRadius: 20, padding: "2px 9px",
-      fontSize: 10.5, fontWeight: 700, letterSpacing: "0.3px",
-      lineHeight: 1.6,
-    }}>
-      {pill.label}
-    </div>
+    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+      Pending
+    </span>
   )
 }
 
-// ─── Skeleton card ────────────────────────────────────────────────────────────
+// ─── Skeleton Card ────────────────────────────────────────────────────────────
 const SkeletonCard = ({ delay = 0 }: { delay?: number }) => (
-  <div style={{
-    background: C.surface, borderRadius: 16, padding: "24px 20px 20px",
-    display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
-    border: `1px solid ${C.border}`,
-    animation: `sp-pulse 1.5s ease-in-out ${delay}s infinite`,
-  }}>
-    <div style={{ width: 72, height: 72, borderRadius: "50%", background: C.skeleton }} />
-    <div style={{ width: "55%", height: 13, borderRadius: 6, background: C.skeleton }} />
-    <div style={{ width: "38%", height: 10, borderRadius: 4, background: C.skeleton }} />
-    <div style={{ width: "100%", height: 1, background: C.skeleton }} />
-    {[48, 58, 52].map((w, i) => (
-      <div key={i} style={{ width: `${w}%`, height: 10, borderRadius: 4, background: C.skeleton }} />
-    ))}
-    <div style={{ width: "100%", height: 36, borderRadius: 8, background: C.skeleton, marginTop: 4 }} />
+  <div
+    className="bg-white border border-slate-100 rounded-2xl p-5 animate-pulse"
+    style={{ animationDelay: `${delay}s` }}
+  >
+    <div className="flex items-center gap-4">
+      <div className="w-12 h-12 rounded-full bg-slate-100 flex-shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3.5 bg-slate-100 rounded-full w-3/5" />
+        <div className="h-2.5 bg-slate-100 rounded-full w-2/5" />
+      </div>
+    </div>
+    <div className="mt-4 h-9 bg-slate-100 rounded-xl" />
   </div>
 )
 
-// ─── Meta row ────────────────────────────────────────────────────────────────
-// const MetaRow = ({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) => (
-//   <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-//     <span style={{ color: C.textMuted, display: "flex", flexShrink: 0 }}>{icon}</span>
-//     <span style={{
-//       fontSize: 12.5, color: C.textSub,
-//       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-//     }}>
-//       {children}
-//     </span>
-//   </div>
-// )
+// ─── Action Buttons ───────────────────────────────────────────────────────────
+const ActionArea = ({
+  user,
+  hasIncomingPending,
+  isSending,
+  isAccepting,
+  isRejecting,
+  isCancelling,
+  isUnfriending,
+  onSend,
+  onAccept,
+  onReject,
+  onCancel,
+  onUnfriend,
+  onMessage,
+}: {
+  user: SearchFriendUser
+  hasIncomingPending?: boolean
+  isSending: boolean
+  isAccepting: boolean
+  isRejecting: boolean
+  isCancelling: boolean
+  isUnfriending: boolean
+  onSend: () => void
+  onAccept: () => void
+  onReject: () => void
+  onCancel: () => void
+  onUnfriend: () => void
+  onMessage: () => void
+}) => {
+  const isFriend = !user.friendship.canSendRequest && user.friendship?.status === "accepted"
+  const isPending = !user.friendship.canSendRequest && user.friendship?.status === "pending"
+  const isIncomingPending = isPending && Boolean(hasIncomingPending)
+  const isOutgoingPending = isPending && !isIncomingPending
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-// const formatJoinDate = (dateStr?: string) => {
-//   if (!dateStr) return "April 2024"
-//   try {
-//     return new Date(dateStr).toLocaleDateString("en-US", { month: "long", year: "numeric" })
-//   } catch { return "April 2024" }
-// }
+  const btnBase =
+    "flex items-center justify-center gap-1.5 text-[13px] font-semibold rounded-xl px-3 py-2.5 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+
+  if (isFriend)
+    return (
+      <div className="flex gap-2 mt-4">
+        <button
+          className={`${btnBase} flex-1 bg-blue-600 hover:bg-blue-700 text-white`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onMessage()
+          }}
+        >
+          <MessageSquare size={13} /> Message
+        </button>
+        <button
+          className={`${btnBase} bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 border border-slate-100 hover:border-red-200`}
+          disabled={isUnfriending}
+          onClick={(e) => {
+            e.stopPropagation()
+            onUnfriend()
+          }}
+        >
+          <UserX size={13} />
+        </button>
+      </div>
+    )
+
+  if (isIncomingPending)
+    return (
+      <div className="flex gap-2 mt-4">
+        <button
+          className={`${btnBase} flex-1 bg-emerald-500 hover:bg-emerald-600 text-white`}
+          disabled={isAccepting || isRejecting}
+          onClick={(e) => {
+            e.stopPropagation()
+            onAccept()
+          }}
+        >
+          <UserCheck size={13} />
+          {isAccepting ? "Accepting…" : "Accept"}
+        </button>
+        <button
+          className={`${btnBase} bg-slate-50 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-100 hover:border-red-200`}
+          disabled={isAccepting || isRejecting}
+          onClick={(e) => {
+            e.stopPropagation()
+            onReject()
+          }}
+          title="Từ chối"
+        >
+          {isRejecting ? "…" : <UserX size={13} />}
+        </button>
+      </div>
+    )
+
+  if (isOutgoingPending)
+    return (
+      <div className="flex gap-2 mt-4">
+        <div className="flex items-center gap-1.5 flex-1 text-[13px] font-medium text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5">
+          <Clock size={13} /> Sent
+        </div>
+        <button
+          className={`${btnBase} bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-100 text-xs`}
+          disabled={isCancelling}
+          onClick={(e) => {
+            e.stopPropagation()
+            onCancel()
+          }}
+        >
+          {isCancelling ? "…" : "Recall"}
+        </button>
+      </div>
+    )
+
+  return (
+    <button
+      className={`${btnBase} w-full mt-4 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-100 hover:border-blue-600`}
+      disabled={isSending}
+      onClick={(e) => {
+        e.stopPropagation()
+        onSend()
+      }}
+    >
+      <UserPlus size={13} />
+      {isSending ? "Sending…" : "Add Friend"}
+    </button>
+  )
+}
 
 // ─── User Card ────────────────────────────────────────────────────────────────
 interface UserCardProps {
@@ -265,167 +253,196 @@ interface UserCardProps {
   hasIncomingPending?: boolean
   isSending: boolean
   isAccepting: boolean
+  isRejecting: boolean
   isCancelling: boolean
   isUnfriending: boolean
   onSend: (id: number) => void
   onAccept: (id: number) => void
+  onReject: (id: number) => void
   onCancel: (id: number) => void
   onUnfriend: (id: number) => void
   onMessage: (id: number) => void
   onOpenProfile: (id: string) => void
+  index: number
 }
 
 const UserCard = ({
-  user, hasIncomingPending, isSending, isAccepting,
-  isCancelling, isUnfriending, onSend, onAccept, onCancel,
-  onUnfriend, onMessage, onOpenProfile,
+  user,
+  hasIncomingPending,
+  isSending,
+  isAccepting,
+  isRejecting,
+  isCancelling,
+  isUnfriending,
+  onSend,
+  onAccept,
+  onReject,
+  onCancel,
+  onUnfriend,
+  onMessage,
+  onOpenProfile,
+  index,
 }: UserCardProps) => {
   const userId = Number(user.id)
   const isFriend = !user.friendship.canSendRequest && user.friendship?.status === "accepted"
   const isPending = !user.friendship.canSendRequest && user.friendship?.status === "pending"
   const isIncomingPending = isPending && Boolean(hasIncomingPending)
   const isOutgoingPending = isPending && !isIncomingPending
-  // const mockFriendCount = ((userId * 17) % 100) + 1
 
   return (
-    <div className="sp-card" onClick={() => onOpenProfile(user.id)}>
-      <StatusPill isFriend={isFriend} isIncoming={isIncomingPending} isOutgoing={isOutgoingPending} />
-
-      {/* Avatar */}
-      <UserAvatar src={user.image} name={user.name} id={userId} size={72} />
-
-      {/* Name */}
-      <p style={{
-        margin: "14px 0 2px", fontSize: 15, fontWeight: 700,
-        color: C.text, textAlign: "center", lineHeight: 1.3,
-        maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-      }}>
-        {user.name}
-      </p>
-
-      {/* Handle */}
-      <p style={{ margin: "0 0 14px", fontSize: 12, color: C.textMuted, fontWeight: 500 }}>
-        @{user.name.toLowerCase().replace(/\s+/g, "")}
-      </p>
-
-      {/* Divider */}
-      <div style={{ width: "100%", height: 1, background: C.border, marginBottom: 14 }} />
-
-      {/* Meta */}
-      {/* <div style={{ display: "flex", flexDirection: "column", gap: 7, width: "100%", marginBottom: 18 }}>
-        <MetaRow icon={<Users size={12.5} />}>
-          <strong style={{ color: C.text }}>{mockFriendCount}</strong>&nbsp;friends
-        </MetaRow>
-        <MetaRow icon={<MapPin size={12.5} />}>
-          Ho Chi Minh City, Vietnam
-        </MetaRow>
-        <MetaRow icon={<Calendar size={12.5} />}>
-          Joined {formatJoinDate(user.createdAt)}
-        </MetaRow>
-      </div> */}
+    <div
+      className="group bg-white border border-slate-100 rounded-2xl p-5 hover:border-blue-100 hover:shadow-lg hover:shadow-blue-50 transition-all duration-200 cursor-pointer"
+      style={{
+        animation: "fadeUp 0.25s ease both",
+        animationDelay: `${index * 0.04}s`,
+      }}
+      onClick={() => onOpenProfile(user.id)}
+    >
+      {/* Top row: avatar + name + badge */}
+      <div className="flex items-center gap-3">
+        <UserAvatar src={user.image} name={user.name} id={userId} size="lg" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-[15px] font-bold text-slate-800 truncate leading-tight">
+              {user.name}
+            </p>
+            <StatusBadge
+              isFriend={isFriend}
+              isIncoming={isIncomingPending}
+              isOutgoing={isOutgoingPending}
+            />
+          </div>
+          <p className="text-xs text-slate-400 font-medium mt-0.5 truncate">
+            @{user.name.toLowerCase().replace(/\s+/g, "")}
+          </p>
+        </div>
+      </div>
 
       {/* Actions */}
-      {isFriend ? (
-        <div>
-          <button
-            className="sp-btn sp-btn-primary mb-2"
-            style={{ flex: 1 }}
-            onClick={(e) => { e.stopPropagation(); onMessage(userId) }}
-          >
-            <MessageSquare size={13} /> Message
-          </button>
-          <button
-            className="sp-btn sp-btn-danger"
-            style={{ flex: 1 }}
-            disabled={isUnfriending}
-            onClick={(e) => { e.stopPropagation(); onUnfriend(userId) }}
-          >
-            <UserX size={13} />
-            {isUnfriending ? "Removing…" : "Unfriend"}
-          </button>
-        </div>
-      ) : isIncomingPending ? (
-        <div>
-          <button
-            className=" sp-btn sp-btn-success mb-2"
-            style={{ flex: 1 }}
-            disabled={isAccepting || isCancelling}
-            onClick={(e) => { e.stopPropagation(); onAccept(userId) }}
-          >
-            <UserCheck size={13} />
-            {isAccepting ? "Accepting…" : "Accept"}
-          </button>
-          <button
-            className="sp-btn sp-btn-neutral"
-            style={{ flex: 1 }}
-            disabled={isAccepting || isCancelling}
-            onClick={(e) => { e.stopPropagation(); onCancel(userId) }}
-          >
-            <UserX size={13} />
-            {isCancelling ? "Declining…" : "Decline"}
-          </button>
-        </div>
-      ) : isOutgoingPending ? (
-        <div>
-          <div className="sp-badge-warn mb-2 text-center" style={{ flex: 1, justifyContent: "center" }}>
-            <Clock size={13} /> Request Sent
-          </div>
-          <button
-            className="sp-btn sp-btn-neutral mx-auto"
-            disabled={isCancelling}
-            onClick={(e) => { e.stopPropagation(); onCancel(userId) }}
-          >
-            {isCancelling ? "…" : "Recall"}
-          </button>
-        </div>
-      ) : (
-        <button
-          className="sp-btn sp-btn-ghost"
-          style={{ width: "100%" }}
-          disabled={isSending}
-          onClick={(e) => { e.stopPropagation(); onSend(userId) }}
-        >
-          <UserPlus size={13} />
-          {isSending ? "Sending…" : "Add Friend"}
-        </button>
-      )}
+      <ActionArea
+        user={user}
+        hasIncomingPending={hasIncomingPending}
+        isSending={isSending}
+        isAccepting={isAccepting}
+        isRejecting={isRejecting}
+        isCancelling={isCancelling}
+        isUnfriending={isUnfriending}
+        onSend={() => onSend(userId)}
+        onAccept={() => onAccept(userId)}
+        onReject={() => onReject(userId)}
+        onCancel={() => onCancel(userId)}
+        onUnfriend={() => onUnfriend(userId)}
+        onMessage={() => onMessage(userId)}
+      />
     </div>
   )
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
+// ─── Empty State ──────────────────────────────────────────────────────────────
 const EmptyState = ({ query }: { query: string }) => (
-  <div style={{
-    display: "flex", flexDirection: "column", alignItems: "center",
-    padding: "72px 24px", gap: 12,
-  }}>
-    <div style={{
-      width: 72, height: 72, borderRadius: "50%",
-      background: C.primaryLight,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      marginBottom: 4,
-    }}>
-      {query ? <Search size={28} color={C.primary} /> : <Users size={28} color={C.primary} />}
+  <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+    <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+      {query ? (
+        <Search size={24} className="text-slate-300" />
+      ) : (
+        <Users size={24} className="text-slate-300" />
+      )}
     </div>
-    <p style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0 }}>
-      {query ? "No results found" : "Find people you know"}
-    </p>
-    <p style={{ fontSize: 13.5, color: C.textMuted, margin: 0, textAlign: "center", maxWidth: 300 }}>
-      {query
-        ? `No one matched "${query}". Try a different name.`
-        : "Use the search bar above to discover and connect with users."}
-    </p>
+    <div>
+      <p className="text-[15px] font-bold text-slate-700 mb-1">
+        {query ? "No results found" : "Search for people"}
+      </p>
+      <p className="text-sm text-slate-400 max-w-xs">
+        {query
+          ? `No users matched "${query}". Try a different name.`
+          : "Type a name above to discover and connect with people."}
+      </p>
+    </div>
   </div>
 )
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Pagination ───────────────────────────────────────────────────────────────
+const Pagination = ({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number
+  totalPages: number
+  onPageChange: (p: number) => void
+}) => {
+  const btnBase =
+    "flex items-center gap-1 px-3.5 py-2 rounded-xl text-[13px] font-semibold border transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+
+  // Build visible page numbers (max 7)
+  const pages: (number | "…")[] = []
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i)
+  } else {
+    pages.push(1)
+    if (page > 3) pages.push("…")
+    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++)
+      pages.push(i)
+    if (page < totalPages - 2) pages.push("…")
+    pages.push(totalPages)
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-2 mt-10">
+      <button
+        className={`${btnBase} border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600 bg-white`}
+        disabled={page === 1}
+        onClick={() => onPageChange(page - 1)}
+      >
+        <ChevronLeft size={14} /> Prev
+      </button>
+
+      <div className="flex gap-1">
+        {pages.map((pg, i) =>
+          pg === "…" ? (
+            <span
+              key={`ellipsis-${i}`}
+              className="w-9 h-9 flex items-center justify-center text-slate-400 text-[13px]"
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={pg}
+              onClick={() => onPageChange(pg as number)}
+              className={`w-9 h-9 rounded-xl text-[13px] font-semibold transition-all duration-150 cursor-pointer ${
+                pg === page
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600 bg-white"
+              }`}
+            >
+              {pg}
+            </button>
+          )
+        )}
+      </div>
+
+      <button
+        className={`${btnBase} border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600 bg-white`}
+        disabled={page === totalPages}
+        onClick={() => onPageChange(page + 1)}
+      >
+        Next <ChevronRight size={14} />
+      </button>
+    </div>
+  )
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export function SearchPeoplePage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const query = (searchParams.get("q") ?? "").trim()
   const [page, setPage] = useState(1)
 
-  useEffect(() => { setPage(1) }, [query])
+  useEffect(() => {
+    setPage(1)
+  }, [query])
 
   const { data, isLoading } = useSearchFriendsUsers(
     { query, current: page, pageSize: 12 },
@@ -435,6 +452,7 @@ export function SearchPeoplePage() {
 
   const sendMutation = useSendFriendRequest()
   const acceptMutation = useAcceptFriendRequest()
+  const rejectMutation = useRejectFriendRequest()
   const cancelMutation = useCancelFriendRequest()
   const unfriendMutation = useUnfriend()
 
@@ -447,35 +465,30 @@ export function SearchPeoplePage() {
 
   return (
     <>
-      <style>{GLOBAL_CSS}</style>
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
-      <div className="sp-root" style={{ minHeight: "100vh", background: C.bg }}>
-        <div style={{ maxWidth: 980, margin: "0 auto", padding: "36px 20px 80px" }}>
+      <div className="min-h-screen bg-slate-50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 pb-20">
 
           {/* Header */}
           {query && !isLoading && results.length > 0 && (
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              marginBottom: 24,
-            }}>
+            <div className="flex items-center justify-between mb-6 animate-[fadeUp_0.2s_ease_both]">
               <div>
-                <h1 style={{ fontSize: 20, fontWeight: 800, color: C.text, margin: "0 0 3px" }}>
+                <h1 className="text-xl font-extrabold text-slate-800 leading-tight">
                   People
                 </h1>
-                <p style={{ fontSize: 13, color: C.textMuted, margin: 0 }}>
-                  Showing&nbsp;
-                  <span style={{ color: C.primary, fontWeight: 600 }}>{total}</span>
-                  &nbsp;result{total !== 1 ? "s" : ""} for&nbsp;
-                  <span style={{ color: C.text, fontWeight: 600 }}>"{query}"</span>
+                <p className="text-sm text-slate-400 mt-0.5">
+                  <span className="text-blue-600 font-semibold">{total}</span>{" "}
+                  result{total !== 1 ? "s" : ""} for{" "}
+                  <span className="text-slate-600 font-semibold">"{query}"</span>
                 </p>
               </div>
-              <div style={{
-                padding: "6px 14px",
-                background: C.primaryLight,
-                borderRadius: 20,
-                border: `1px solid ${C.primaryMid}`,
-                fontSize: 12.5, fontWeight: 700, color: C.primary,
-              }}>
+              <div className="h-8 px-3.5 flex items-center rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold">
                 {total} found
               </div>
             </div>
@@ -485,86 +498,50 @@ export function SearchPeoplePage() {
           {!query ? (
             <EmptyState query="" />
           ) : isLoading ? (
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
-              gap: 16,
-            }}>
-              {[...Array(8)].map((_, i) => <SkeletonCard key={i} delay={i * 0.07} />)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[...Array(9)].map((_, i) => (
+                <SkeletonCard key={i} delay={i * 0.06} />
+              ))}
             </div>
           ) : results.length === 0 ? (
             <EmptyState query={query} />
           ) : (
             <>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
-                gap: 16,
-              }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {results.map((user, i) => (
-                  <div key={user.id} style={{ animationDelay: `${i * 0.04}s` }}>
-                    <UserCard
-                      user={user}
-                      hasIncomingPending={incomingPendingIds.has(Number(user.id))}
-                      isSending={sendMutation.variables === Number(user.id) && sendMutation.isPending}
-                      isAccepting={acceptMutation.variables === Number(user.id) && acceptMutation.isPending}
-                      isCancelling={cancelMutation.variables === Number(user.id) && cancelMutation.isPending}
-                      isUnfriending={unfriendMutation.variables === Number(user.id) && unfriendMutation.isPending}
-                      onSend={(id) => sendMutation.mutate(id)}
-                      onAccept={(id) => acceptMutation.mutate(id)}
-                      onCancel={(id) => cancelMutation.mutate(id)}
-                      onUnfriend={(id) => unfriendMutation.mutate(id)}
-                      onMessage={(id) => navigate(`/messages/${id}`)}
-                      onOpenProfile={(id) => navigate(`/profile/${id}`)}
-                    />
-                  </div>
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    index={i}
+                    hasIncomingPending={incomingPendingIds.has(Number(user.id))}
+                    isSending={
+                      sendMutation.variables === Number(user.id) && sendMutation.isPending
+                    }
+                    isAccepting={
+                      acceptMutation.variables === Number(user.id) && acceptMutation.isPending
+                    }
+                    isRejecting={
+                      rejectMutation.variables === Number(user.id) && rejectMutation.isPending
+                    }
+                    isCancelling={
+                      cancelMutation.variables === Number(user.id) && cancelMutation.isPending
+                    }
+                    isUnfriending={
+                      unfriendMutation.variables === Number(user.id) && unfriendMutation.isPending
+                    }
+                    onSend={(id) => sendMutation.mutate(id)}
+                    onAccept={(id) => acceptMutation.mutate(id)}
+                    onReject={(id) => rejectMutation.mutate(id)}
+                    onCancel={(id) => cancelMutation.mutate(id)}
+                    onUnfriend={(id) => unfriendMutation.mutate(id)}
+                    onMessage={(id) => navigate(`/messages/${id}`)}
+                    onOpenProfile={(id) => navigate(`/profile/${id}`)}
+                  />
                 ))}
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
-                <div style={{
-                  display: "flex", alignItems: "center",
-                  justifyContent: "center", gap: 10, marginTop: 40,
-                }}>
-                  <button
-                    className="sp-pagbtn"
-                    disabled={page === 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    <ChevronLeft size={15} /> Previous
-                  </button>
-
-                  <div style={{ display: "flex", gap: 4 }}>
-                    {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                      const pg = i + 1
-                      const active = pg === page
-                      return (
-                        <button
-                          key={pg}
-                          className="sp-pgnum"
-                          onClick={() => setPage(pg)}
-                          style={{
-                            border: active ? "none" : `1.5px solid ${C.border}`,
-                            background: active ? C.primary : C.surface,
-                            color: active ? "#fff" : C.textSub,
-                            fontWeight: active ? 700 : 500,
-                          }}
-                        >
-                          {pg}
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  <button
-                    className="sp-pagbtn"
-                    disabled={page === totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  >
-                    Next <ChevronRight size={15} />
-                  </button>
-                </div>
+                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
               )}
             </>
           )}

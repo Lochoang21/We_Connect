@@ -191,6 +191,10 @@ export const API = {
     // Comment on a post
     commentOnPost: (postId: string, data: CommentOnPostRequest) =>
       fetch.post(`api/v1/posts/${postId}/comment`, data),
+
+    // Get absolute image paths by author id
+    getAuthorImages: (authorId: number | string) =>
+      fetch.get(`/api/v1/posts/author/${authorId}/images`),
   },
 
   friends: {
@@ -201,6 +205,10 @@ export const API = {
     // Accept friend request
     acceptRequest: (targetUserId: number) =>
       fetch.patch("/api/v1/friends/request/accept", { targetUserId }),
+
+    // Reject friend request
+    rejectRequest: (targetUserId: number) =>
+      fetch.patch("/api/v1/friends/request/reject", { targetUserId }),
 
     // Cancel sent friend request
     cancelRequest: (targetUserId: number) =>

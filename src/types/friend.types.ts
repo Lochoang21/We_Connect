@@ -42,10 +42,30 @@ export interface FriendQueryParams {
   pageSize?: number;
 }
 
+export interface CurrentUserFriend {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  image: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── API Responses ────────────────────────────────────────────────────────────
 
 export interface PaginatedFriends {
   result: FriendUserInfo[];
+  total: number;
+  totalPage: number;
+  current: number;
+  pageSize: number;
+}
+
+export interface CurrentUserFriendsResponse {
+  result: CurrentUserFriend[];
   total: number;
   totalPage: number;
   current: number;

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ProfileFeed } from "@/components/Profiles/ProfileFeed"
+import { ProfileFriends } from "@/components/Profiles/ProfileFriends"
 import { ProfileHeader } from "@/components/Profiles/ProfileHeader"
+import { ProfilePhotos } from "@/components/Profiles/ProfilePhotos"
 import { ProfileSidebar } from "@/components/Profiles/ProfileSidebar"
 import { useAppDispatch, useAppSelector } from "@/redux/hooks"
 import { fetchUserProfile } from "@/redux/slices/authSlice"
@@ -31,6 +33,7 @@ export function ProfilePage() {
   const [viewedUser, setViewedUser] = useState<User | null>(null)
   const [viewedUserLoading, setViewedUserLoading] = useState(false)
   const [viewedUserError, setViewedUserError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState(0)
 
   const isViewingOtherUser = Boolean(id)
   const isOwnProfile = !id || id === user?.id
@@ -207,6 +210,8 @@ export function ProfilePage() {
         isRelationshipLoading={relationshipQuery.isLoading}
         currentUserId={viewerUserId}
         hasIncomingPending={hasIncomingPending}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
         friendActions={{
           isSending: sendMutation.isPending,
           isAccepting: acceptMutation.isPending,
@@ -241,23 +246,37 @@ export function ProfilePage() {
       />
 
       <main className="max-w-5xl mx-auto px-4 py-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <ProfileSidebar user={profileUser} />
-          <div className="flex-1 min-w-0">
-            {postsLoading ? (
-              <div className="rounded-2xl border border-border/60 bg-card p-6 text-sm text-muted-foreground">
-                {isOwnProfile ? "Đang tải bài viết của bạn..." : "Đang tải bài viết của người dùng..."}
-              </div>
-            ) : (
-              <ProfileFeed
-                user={profileUser}
-                posts={profilePosts}
-                currentUserId={user?.id ?? ""}
-                isOwn={isOwnProfile}
-              />
-            )}
+        {activeTab === 0 && (
+          <div className="flex flex-col lg:flex-row gap-4">
+            <ProfileSidebar user={profileUser} />
+            <div className="flex-1 min-w-0">
+              {postsLoading ? (
+                <div className="rounded-2xl border border-border/60 bg-card p-6 text-sm text-muted-foreground">
+                  {isOwnProfile ? "Đang tải bài viết của bạn..." : "Đang tải bài viết của người dùng..."}
+                </div>
+              ) : (
+                <ProfileFeed
+                  user={profileUser}
+                  posts={profilePosts}
+                  currentUserId={user?.id ?? ""}
+                  isOwn={isOwnProfile}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {activeTab === 1 && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <ProfileFriends userId={Number(profileUser?.id)} isOwn={isOwnProfile} />
+          </div>
+        )}
+
+        {activeTab === 2 && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <ProfilePhotos userId={Number(profileUser?.id)} isOwn={isOwnProfile} />
+          </div>
+        )}
       </main>
     </div>
   )

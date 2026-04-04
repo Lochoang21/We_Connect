@@ -24,6 +24,8 @@ interface ProfileHeaderProps {
   isRelationshipLoading?: boolean
   currentUserId?: number | null
   hasIncomingPending?: boolean
+  activeTab?: number
+  setActiveTab?: (tab: number) => void
   friendActions?: FriendActions
 }
 
@@ -34,6 +36,8 @@ export function ProfileHeader({
   isRelationshipLoading,
   currentUserId,
   hasIncomingPending,
+  activeTab,
+  setActiveTab,
   friendActions,
 }: ProfileHeaderProps) {
   const joinedDate = user.createdAt
@@ -152,7 +156,7 @@ export function ProfileHeader({
           </div>
         </div>
 
-        <ProfileTabs />
+        <ProfileTabs active={activeTab ?? 0} setActive={setActiveTab ?? (() => {})} />
       </div>
     </div>
   )

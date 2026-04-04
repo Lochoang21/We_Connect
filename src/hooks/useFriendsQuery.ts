@@ -112,6 +112,19 @@ export const useAcceptFriendRequest = () => {
 };
 
 /**
+ * Từ chối lời mời.
+ */
+export const useRejectFriendRequest = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (targetUserId: number) => friendAPI.rejectRequest(targetUserId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: friendQueryKeys.all });
+    },
+  });
+};
+
+/**
  * Hủy lời mời đã gửi.
  */
 export const useCancelFriendRequest = () => {
