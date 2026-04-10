@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Search, Edit, Filter, MoreVertical } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { friendService } from "@/services/friendService"
+import { useFriendsSocket } from "@/hooks/useFriendsSocket"
 import type { CurrentUserFriend, PendingRequestItem } from "@/types/friend.types"
 
 export function MessagesPanel() {
@@ -18,7 +19,7 @@ export function MessagesPanel() {
   const [isActionLoading, setIsActionLoading] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
@@ -37,11 +38,19 @@ export function MessagesPanel() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     void fetchData()
-  }, [])
+  }, [fetchData])
+
+  // Lắng nghe sự kiện socket realtime từ friends namespace
+  useFriendsSocket({
+    onRequestReceived: () => void fetchData(),
+    onRequestAccepted: () => void fetchData(),
+    onRequestCancelled: () => void fetchData(),
+    onUnfriended:      () => void fetchData(),
+  })
 
   const handleAccept = async (userId: number) => {
     setIsActionLoading(userId)

@@ -1,4 +1,4 @@
-import { Bell, MessageSquare, ChevronDown, User, Settings, LogOut } from "lucide-react"
+import { MessageSquare, ChevronDown, User, Settings, LogOut } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom"
 import { logoutAsync } from "@/redux/slices/authSlice"
 import type { RootState, AppDispatch } from "@/redux/store"
 import { NavbarSearch } from "../Friends/NavbarSearch"
+import { NotificationDropdown } from "../Notifications/NotificationDropdown"
 
 export function Navbar() {
   const dispatch = useDispatch<AppDispatch>()
@@ -58,20 +59,8 @@ export function Navbar() {
         {/* ── Right zone ── */}
         <div className="flex items-center gap-2 flex-shrink-0">
 
-          {/* Bell */}
-          <button
-            title="Thông báo"
-            className="relative w-[38px] h-[38px] rounded-full flex items-center justify-center
-              bg-muted/60 text-foreground/75
-              hover:bg-muted hover:text-foreground hover:-translate-y-px
-              transition-all duration-150 cursor-pointer border-0"
-          >
-            <Bell size={18} />
-            {/* Badge — uncomment when needed:
-            <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-destructive
-              border-2 border-card" />
-            */}
-          </button>
+          {/* Notification */}
+          <NotificationDropdown />
 
           {/* Messages */}
           <button

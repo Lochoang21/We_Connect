@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
@@ -10,12 +10,33 @@ import { store } from "@/redux/store";
 import routes from "@/routes/route";
 import { setApiDispatch } from "@/services/apiService";
 import { initializeAuth } from "@/redux/slices/authSlice";
-import { useAppSelector } from "@/redux/hooks";
+import { useNotificationSocket } from "@/hooks/useNotificationSocket";
+import { useAppSelector, useAppDispatch } from "@/redux/hooks";
+import { fetchNotifications } from "./redux/slices/notificationSlice";
 
 const router = createBrowserRouter(routes);
 
 export const AppShell = () => {
+
+  const dispatch = useAppDispatch()
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const isInitialized   = useAppSelector((state) => state.auth.isInitialized)
+  
+  // Kích hoạt kết nối socket khi app mount
+  useNotificationSocket();
+
+   useEffect(() => {
+    // ✅ Chỉ fetch sau khi initializeAuth() đã chạy xong
+    // và user thực sự đã đăng nhập
+    if (isInitialized && isAuthenticated) {
+      // 1000 để lấy gần như toàn bộ thông báo từ DB ngay lần đầu
+      dispatch(fetchNotifications({ current: 1, pageSize: 1000 }))
+    }
+  }, [isInitialized, isAuthenticated, dispatch])
+
+  // ✅ Chặn render cho đến khi biết trạng thái auth
+  // Tránh flash giao diện hoặc redirect sai
+  if (!isInitialized) return null
 
   return (
     <AlertProvider>
@@ -52,3 +73,4 @@ createRoot(document.getElementById("root")!).render(
     </Provider>
   </StrictMode>
 );
+
