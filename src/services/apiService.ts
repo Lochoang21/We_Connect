@@ -231,6 +231,20 @@ export const API = {
       fetch.get(`/api/v1/friends/users/${userId}`, { params }),
   },
 
+  chat: {
+    // Get user's conversations
+    getConversations: () =>
+      fetch.get("/api/v1/conversations"),
+
+    // Create or get existing conversation
+    createConversation: (data: { participantIds: number[]; conversationType: string; name?: string; avatarUrl?: string }) =>
+      fetch.post("/api/v1/conversations", data),
+
+    // Get messages with cursor pagination
+    getMessages: (conversationId: number, params?: { limit?: number; cursor?: number }) =>
+      fetch.get(`/api/v1/messages/conversation/${conversationId}`, { params }),
+  },
+
   admin: {
     // Add admin endpoints here
   },

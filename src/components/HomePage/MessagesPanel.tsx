@@ -8,7 +8,12 @@ import { friendService } from "@/services/friendService"
 import { useFriendsSocket } from "@/hooks/useFriendsSocket"
 import type { CurrentUserFriend, PendingRequestItem } from "@/types/friend.types"
 
-export function MessagesPanel() {
+export interface MessagesPanelProps {
+  onSelectChat?: (user: CurrentUserFriend) => void;
+  selectedChatId?: string | null;
+}
+
+export function MessagesPanel({ onSelectChat, selectedChatId }: MessagesPanelProps) {
   const [activeTab, setActiveTab] = useState("primary")
   const [searchTerm, setSearchTerm] = useState("")
   const [friends, setFriends] = useState<CurrentUserFriend[]>([])
@@ -162,7 +167,10 @@ export function MessagesPanel() {
             {!isLoading && !error && filteredFriends.map((friend) => (
               <div
                 key={friend.id}
-                className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => onSelectChat?.(friend)}
+                className={`flex items-center gap-3 p-3 hover:bg-muted/80 cursor-pointer transition-colors ${
+                  selectedChatId === friend.id.toString() ? "bg-muted" : ""
+                }`}
               >
                 <Avatar className="w-10 h-10">
                   <AvatarImage src={friend.image || "/placeholder.svg"} />

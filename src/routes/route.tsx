@@ -11,6 +11,7 @@ const HomePage = lazy(() => import("@/pages/HomePage"));
 const ProfilePage = lazy(() => import("@/pages/Profile/ProfilePage"));
 const SearchPage = lazy(() => import("@/pages/SearchPage/SearchPage"));
 const SettingPage = lazy(() => import("@/pages/Setting/SettingPage"));
+const MessagesPage = lazy(() => import("@/pages/Messages/MessagesPage"));
 
 const routes = [
   {
@@ -43,6 +44,10 @@ const routes = [
       {
         path: "/settings",
         element: <SettingPage />,
+      },
+      {
+        path: "/messages",
+        element: <MessagesPage />,
       },
     ],
   },
